@@ -50,6 +50,7 @@ process_commands(
     // Sometimes the command queue may stall due to unavailability of internal
     // resources - e.g. ITAG trackers
     if ( (g_reg_file.cqcsr.cqon == 0) ||
+         (g_reg_file.cqcsr.cqen == 0) ||
          (g_reg_file.cqcsr.cqmf != 0) ||
          (g_reg_file.cqcsr.cmd_ill != 0) ||
          (g_reg_file.cqcsr.cmd_to != 0) ||
@@ -511,6 +512,12 @@ do_pending_iofence() {
         // If not still pending then advance the CQH
         g_reg_file.cqh.index =
             (g_reg_file.cqh.index + 1) & ((1UL << (g_reg_file.cqb.log2szm1 + 1)) - 1);
+    }
+    // If IOFENCE is not pending and CQ was requested to be
+    // turned off then turn it off now
+    if ( g_iofence_wait_pending_inv == 0 ) {
+        g_reg_file.cqcsr.cqon = g_reg_file.cqcsr.cqen;
+        g_reg_file.cqcsr.busy = 0;
     }
     return;
 }
