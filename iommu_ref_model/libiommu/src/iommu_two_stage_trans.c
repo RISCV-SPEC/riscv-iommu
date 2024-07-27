@@ -19,7 +19,7 @@ two_stage_address_translation(
     uint16_t ppn[5];
     pte_t amo_pte;
     gpte_t gpte;
-    uint8_t NL_G = 1;
+    uint8_t NL_G = 0;
     uint8_t PTESIZE, LEVELS, status, pte_changed, gst_fault;
     int8_t i;
     uint64_t a, masked_upper_bits, mask;
@@ -43,12 +43,13 @@ two_stage_address_translation(
         // No translation or protection.
         i = 0;
         pte->raw = 0;
-        pte->PPN = iova / PAGESIZE;
+        pte->PPN = 0;
         pte->D = pte->A = pte->G = pte->U = 1;
         pte->X = pte->W = pte->R = pte->V = 1;
         pte->N = 0;
         pte->PBMT = PMA;
-        goto step_8;
+        *pa = iova;
+        return 0;
     }
 
     // 1. Let a be satp.ppn × PAGESIZE, and let i = LEVELS − 1. PAGESIZE is 2^12. (For Sv32,
@@ -178,7 +179,7 @@ step_2:
     // The G bit designates a global mapping. Global mappings are those that exist
     // in all address spaces.  For non-leaf PTEs, the global setting implies that
     // all mappings in the subsequent levels of the page table are global.
-    NL_G = NL_G & pte->G;
+    NL_G = NL_G | pte->G;
 
     // For non-leaf PTEs, bits 62–61 are reserved for future standard use. Until
     // their use is defined by a standard extension, they must be cleared by
@@ -341,7 +342,7 @@ step_8:
     // The G bit designates a global mapping. Global mappings are those that exist
     // in all address spaces.  For non-leaf PTEs, the global setting implies that
     // all mappings in the subsequent levels of the page table are global.
-    pte->G = NL_G & pte->G;
+    pte->G = NL_G | pte->G;
 
     // The translated physical address is given as follows:
     // pa.pgoff = va.pgoff.
