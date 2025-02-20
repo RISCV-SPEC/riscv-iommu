@@ -275,7 +275,7 @@ step_5:
     //      also set pte.d to 1.
     //    – If the comparison fails, return to step 2
     if ( (gpte->A == 1) && (gpte->D == 1 || is_write == 0) &&
-         (gpte->D == 1 || is_implicit == 0 || gpte->W == 0 || GADE == 0 || SADE == 0) ) goto step_8;
+         (gpte->D == 1 || is_implicit == 0 || gpte->W == 0 || SADE == 0) ) goto step_8;
 
     // A and/or D bit update needed
     if ( GADE == 0 ) return GST_PAGE_FAULT;
@@ -296,7 +296,7 @@ step_5:
         // requests that may request write permission when write permission does not
         // exist. If write permission exists then the D bit is set else D bit is not
         // set and the write permission is returned in responses as 0.
-        if ( (is_write == 1) && (amo_gpte.W == 1) ) amo_gpte.D = 1;
+        if ( (is_write == 1 || is_implicit == 1) && (amo_gpte.W == 1) ) amo_gpte.D = 1;
     }
 
     status = write_memory((char *)&amo_gpte.raw, (a + (vpn[i] * PTESIZE)), PTESIZE);
